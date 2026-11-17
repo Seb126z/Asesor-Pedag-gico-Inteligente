@@ -7,7 +7,7 @@ function isDoc(){return !!USER&&USER.role==='docente'}
 function tabsFor(role){var t=[['res','Proyecto']];if(role==='docente')t.push(['pan','Panel docente'],['rub','Rúbricas']);t.push(['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']);return t}
 function renderUser(){$('userbar').innerHTML=USER?'<span>'+esc(USER.name)+' <span class="tag">'+esc(USER.role)+'</span></span><button class="b s" onclick="logout()">Cerrar sesión</button>':''}
 function draw(){renderUser();nav();render()}
-function resetLabs(){LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null;l.apiEvaluationId=null;l.pending=null;l.feedback=null;l.fb='';l.dirty=false;l.evid=[];l.evLoaded=false;l.evLoading=false})}
+function resetLabs(){if(window.analyticsReset)window.analyticsReset();LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null;l.apiEvaluationId=null;l.pending=null;l.feedback=null;l.fb='';l.dirty=false;l.evid=[];l.evLoaded=false;l.evLoading=false;l.busy=false})}
 function logout(expired){clearSession();USER=null;TABS=[];tab='res';PEND=null;pSel=null;resetLabs();if(expired===true)toast('Tu sesión venció. Inicia sesión de nuevo.','er');draw()}
 async function afterLogin(){TABS=tabsFor(USER.role);tab='res';
  try{await loadLabs()}catch(e){resetLabs();toast('No se pudieron cargar los laboratorios del servidor; se usan datos de ejemplo. '+e.message,'er')}

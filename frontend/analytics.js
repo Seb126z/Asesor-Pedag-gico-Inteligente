@@ -34,9 +34,7 @@
   async function loadReport() {
     loading = true; errorMessage = '';
     try {
-      var response = await fetch('/api/analytics/report' + queryString());
-      if (!response.ok) throw new Error('El backend respondió ' + response.status);
-      reportData = await response.json();
+      reportData = await api('/api/analytics/report' + queryString());
     } catch (error) { errorMessage = error.message; }
     loading = false;
     if (window.tab === 'inf') window.render();
@@ -44,16 +42,14 @@
   async function loadMap() {
     loading = true; errorMessage = '';
     try {
-      var response = await fetch('/api/mindmap' + queryString());
-      if (!response.ok) throw new Error('El backend respondió ' + response.status);
-      mapData = await response.json();
+      mapData = await api('/api/mindmap' + queryString());
     } catch (error) { errorMessage = error.message; }
     loading = false;
     if (window.tab === 'map') window.render();
   }
   function filterControls() {
     return '<div class="card row"><label> Cohorte <select id="analyticsCohort"><option value="">Todas</option><option value="1" ' + (filters.cohort === '1' ? 'selected' : '') + '>Cohorte 1</option><option value="2" ' + (filters.cohort === '2' ? 'selected' : '') + '>Cohorte 2</option></select></label>' +
-      '<label> Estudiante <input id="analyticsStudent" value="' + escA(filters.student) + '" placeholder="Nombre exacto (opcional)"></label>' +
+      (window.isDoc && window.isDoc() ? '<label> Estudiante <input id="analyticsStudent" value="' + escA(filters.student) + '" placeholder="Nombre exacto (opcional)"></label>' : '') +
       '<button class="b" onclick="analyticsApplyFilters()">Aplicar filtros</button><button class="b s" onclick="analyticsClearFilters()">Limpiar</button></div>';
   }
   function emptyState(message) {
@@ -122,7 +118,7 @@
       (selected.approved_evaluations != null ? '<p>Evaluaciones aprobadas: ' + selected.approved_evaluations + '</p>' : '') +
       (selected.evidence_count != null ? '<p>Evidencias: ' + selected.evidence_count + '</p>' : '') +
       (selected.student ? '<p>Estudiante: ' + escA(selected.student) + '</p>' : '') +
-      (selected.download_url ? '<p><a href="' + escA(selected.download_url) + '" target="_blank" rel="noopener">Descargar evidencia</a></p>' : '') : '<p class="mu">Selecciona un nodo para consultar sus detalles.</p>';
+      (selected.download_url ? '<p><button class="b s" onclick="analyticsDownloadEvidence(\'' + escA(selected.download_url) + '\',\'' + escA(selected.label) + '\')">Descargar evidencia</button></p>' : '') : '<p class="mu">Selecciona un nodo para consultar sus detalles.</p>';
     return html + '<div class="card"><div class="row" style="justify-content:space-between"><h3>Mapa de competencias y evidencias</h3><button class="b s" onclick="analyticsDownloadMap()">Descargar mapa JSON</button></div><div class="row"><span class="tag">Competencia</span><span class="tag">Laboratorio</span><span class="tag">Temática</span><span class="tag">Evidencia</span></div><div class="tw">' + svg + '</div><small>El color representa el dominio cuando existen evaluaciones aprobadas; gris indica que aún no hay calificación.</small></div><div class="card">' + detail + '</div>';
   }
   function download(name, data) {
@@ -132,7 +128,8 @@
   }
   window.analyticsApplyFilters = function () {
     filters.cohort = document.getElementById('analyticsCohort').value;
-    filters.student = document.getElementById('analyticsStudent').value;
+    var studentInput = document.getElementById('analyticsStudent');
+    filters.student = studentInput ? studentInput.value : '';
     reportData = null; mapData = null; selectedNode = null;
     if (window.tab === 'inf') loadReport(); else loadMap();
   };
@@ -140,16 +137,27 @@
     filters = { cohort: '', student: '' }; reportData = null; mapData = null; selectedNode = null;
     if (window.tab === 'inf') loadReport(); else loadMap();
   };
+  window.analyticsDownloadEvidence = async function (url, name) {
+    try {
+      var token = window.getToken && window.getToken();
+      var response = await fetch(url, { headers: token ? { Authorization: 'Bearer ' + token } : {} });
+      if (!response.ok) throw new Error('Error ' + response.status);
+      var blob = await response.blob();
+      var href = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = href; a.download = name || 'evidencia'; a.click(); URL.revokeObjectURL(href);
+    } catch (error) { window.toast('No se pudo descargar la evidencia: ' + error.message, 'er'); }
+  };
   window.analyticsSelectNode = function (id) { selectedNode = id; window.render(); };
   window.analyticsDownloadReport = function () { if (reportData) download('informe-analitica.json', reportData); };
   window.analyticsDownloadMap = function () { if (mapData) download('mapa-competencias.json', mapData); };
   window.vInf = vInfAnalytics;
   window.vMap = vMapAnalytics;
+  window.analyticsReset = function () { reportData = null; mapData = null; selectedNode = null; filters = { cohort: '', student: '' }; };
   var originalGo = window.go;
   window.go = function (tab) {
     originalGo(tab);
-    if (tab === 'inf' && !reportData) loadReport();
-    if (tab === 'map' && !mapData) loadMap();
+    if (tab === 'inf' && reportData) loadReport();
+    if (tab === 'map' && mapData) loadMap();
   };
   if (window.tab === 'inf') loadReport();
   if (window.tab === 'map') loadMap();

@@ -4,7 +4,7 @@ from statistics import mean
 from app.models.entities import Evaluation, Evidence, Laboratory
 
 
-def build_analytics_report(db, cohort: int | None = None, student: str | None = None):
+def build_analytics_report(db, cohort: int | None = None, student: str | None = None, student_id: int | None = None):
     labs_query = db.query(Laboratory)
     if cohort is not None:
         labs_query = labs_query.filter(Laboratory.cohort == cohort)
@@ -14,12 +14,16 @@ def build_analytics_report(db, cohort: int | None = None, student: str | None = 
     evaluations_query = db.query(Evaluation).filter(Evaluation.laboratory_id.in_(lab_ids)) if lab_ids else db.query(Evaluation).filter(Evaluation.id == -1)
     if student:
         evaluations_query = evaluations_query.filter(Evaluation.student == student)
+    if student_id is not None:
+        evaluations_query = evaluations_query.filter(Evaluation.student_id == student_id)
     evaluations = evaluations_query.order_by(Evaluation.created_at.asc()).all()
     approved = [ev for ev in evaluations if ev.approved and ev.final_grade is not None]
 
     evidence_query = db.query(Evidence).filter(Evidence.laboratory_id.in_(lab_ids)) if lab_ids else db.query(Evidence).filter(Evidence.id == -1)
     if student:
         evidence_query = evidence_query.filter(Evidence.student == student)
+    if student_id is not None:
+        evidence_query = evidence_query.filter(Evidence.student_id == student_id)
     evidences = evidence_query.all()
 
     approved_by_lab = defaultdict(list)
@@ -81,7 +85,7 @@ def build_analytics_report(db, cohort: int | None = None, student: str | None = 
     }
 
 
-def build_mindmap(db, cohort: int | None = None, student: str | None = None):
+def build_mindmap(db, cohort: int | None = None, student: str | None = None, student_id: int | None = None):
     labs_query = db.query(Laboratory)
     if cohort is not None:
         labs_query = labs_query.filter(Laboratory.cohort == cohort)
@@ -90,10 +94,14 @@ def build_mindmap(db, cohort: int | None = None, student: str | None = None):
     eval_query = db.query(Evaluation).filter(Evaluation.laboratory_id.in_(lab_ids), Evaluation.approved.is_(True)) if lab_ids else db.query(Evaluation).filter(Evaluation.id == -1)
     if student:
         eval_query = eval_query.filter(Evaluation.student == student)
+    if student_id is not None:
+        eval_query = eval_query.filter(Evaluation.student_id == student_id)
     evaluations = [ev for ev in eval_query.all() if ev.final_grade is not None]
     evidence_query = db.query(Evidence).filter(Evidence.laboratory_id.in_(lab_ids)) if lab_ids else db.query(Evidence).filter(Evidence.id == -1)
     if student:
         evidence_query = evidence_query.filter(Evidence.student == student)
+    if student_id is not None:
+        evidence_query = evidence_query.filter(Evidence.student_id == student_id)
     evidences = evidence_query.all()
 
     topic_labs = defaultdict(set)

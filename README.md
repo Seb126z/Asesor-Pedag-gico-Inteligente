@@ -30,6 +30,30 @@ Abrir http://127.0.0.1:8000. La documentación de la API está en http://127.0.0
 
 Para Linux/macOS, activar el entorno con `source .venv/bin/activate`.
 
+**Cuentas demo (solo en desarrollo):** `docente@demo.local` / `docente123` y `estudiante@demo.local` / `estudiante123`. El registro público crea cuentas de estudiante.
+
+La base SQLite (`backend/storage/asesor_pedagogico.db`) se crea sola al iniciar y se repara si viene de una versión anterior (agrega las columnas que falten). Si quieres empezar de cero, borra ese archivo.
+
+## Pruebas
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+## Evaluación con IA
+
+El botón **«Evaluar con IA»** de la pestaña Evaluación analiza tu último archivo adjunto (PDF con texto, `.txt`, `.py`, `.js` o `.html`; hasta 20.000 caracteres) y lo envía a un modelo junto con la rúbrica. La respuesta se valida con un esquema (Pydantic) y **la nota la calcula siempre el backend** con los pesos de la rúbrica. Queda pendiente de aprobación docente.
+
+Funciona con cualquier servidor compatible con la API de OpenAI. Configúralo en `.env` (ver `.env.example`):
+
+| Opción | `LLM_BASE_URL` | `LLM_API_KEY` | `LLM_MODEL` |
+|---|---|---|---|
+| Ollama local (por defecto) | `http://localhost:11434/v1` | `ollama` | `llama3.2` |
+| OpenAI | `https://api.openai.com/v1` | tu clave | p. ej. `gpt-4o-mini` |
+
+Con Ollama: `ollama pull llama3.2` y déjalo corriendo. Si el modelo no responde, el resultado se marca como `respaldo-sin-llm` (notas neutras, no una evaluación real). Los PDF escaneados (solo imagen), DOCX y ZIP aún no se pueden leer; en ese caso la API responde con un error claro. El botón «Evaluación simulada» sigue disponible y solo busca palabras clave en el texto del cuadro.
+
 ## Estructura
 
 ```text
@@ -44,7 +68,7 @@ asesor-pedagogico/
 │   │   └── main.py       # Aplicación FastAPI y datos iniciales
 │   ├── storage/evidencias/ # Archivos cargados (no versionar)
 │   └── run.py
-├── frontend/index.html   # Interfaz integrada desde el HTML de Claude
+├── frontend/             # index.html + js/ (módulos) + css/ + analytics.js
 ├── docs/                 # Documentación del proyecto
 ├── tests/
 ├── .env.example

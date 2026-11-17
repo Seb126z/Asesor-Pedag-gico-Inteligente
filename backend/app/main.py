@@ -1,18 +1,15 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import APP_NAME, UPLOAD_DIR
-from app.core.database import Base, engine, SessionLocal
+from app.core.database import SessionLocal, ensure_schema
 from app.models.entities import Laboratory
 from app.api.routes import router
 from app.api.auth import router as auth_router
 from app.services.users import seed_users
 
-app = FastAPI(title=APP_NAME, version="0.1.0", description="API inicial para gestión de evidencias, rúbricas y evaluaciones.")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-app.include_router(auth_router)
-app.include_router(router)
 
 SEED = [
  (1,1,"Lab 1 · Búsqueda y agentes",["busqueda","agentes"],[{"name":"Algoritmo de búsqueda","weight":40,"indicators":["bfs","a*","heurística","nodos"]},{"name":"Diseño del agente","weight":30,"indicators":["agente","percepción","acción","entorno"]},{"name":"Análisis de resultados","weight":30,"indicators":["complejidad","comparación","tiempo"]}]),
@@ -23,9 +20,9 @@ SEED = [
  (6,2,"Lab 6 · LLM y RAG",["llm","nlp"],[{"name":"Recuperación","weight":35,"indicators":["embeddings","vectorial","chunks"]},{"name":"Prompting","weight":35,"indicators":["prompt","contexto","json"]},{"name":"Evaluación y alucinaciones","weight":30,"indicators":["alucinación","citas","verificación"]}]),
 ]
 
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    ensure_schema()
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     with SessionLocal() as db:
         if db.query(Laboratory).count() == 0:
@@ -33,7 +30,13 @@ def startup():
                 db.add(Laboratory(id=lab_id, cohort=cohort, name=name, topics=topics, rubric_version="1.0", rubric=rubric, description="Descripción y objetivos por completar con la guía oficial del laboratorio."))
             db.commit()
         seed_users(db)
+    yield
+
+
+app = FastAPI(title=APP_NAME, version="0.1.0", description="API para gestión de evidencias, rúbricas y evaluaciones.", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(auth_router)
+app.include_router(router)
 
 frontend = Path(__file__).resolve().parents[2] / "frontend"
 app.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
-

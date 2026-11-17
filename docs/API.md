@@ -2,17 +2,22 @@
 
 Base local: `http://127.0.0.1:8000`. La documentación interactiva se publica en `/docs`.
 
+**Autenticación:** todas las rutas, salvo `/api/health`, `/api/auth/login` y `/api/auth/register`, requieren `Authorization: Bearer <token>`. El estudiante solo ve sus propias evidencias y evaluaciones aprobadas; el docente ve todo y es el único que edita rúbricas y aprueba.
+
 | Método | Ruta | Propósito |
 |---|---|---|
 | GET | `/api/health` | Estado del servicio |
 | GET | `/api/laboratories` | Laboratorios, cohortes y rúbricas |
 | GET | `/api/laboratories/{id}` | Detalle de laboratorio |
 | PUT | `/api/laboratories/{id}/rubric` | Actualizar rúbrica (ponderaciones = 100 %) |
-| POST | `/api/laboratories/{id}/evidence` | Cargar archivo multipart (`file`, `student`) |
+| POST | `/api/auth/login` · `/api/auth/register` · GET `/api/auth/me` | Sesión (login por formulario `username`/`password`) |
+| POST | `/api/laboratories/{id}/evidence` | Cargar archivo multipart (`file`); el autor es el usuario autenticado |
 | GET | `/api/laboratories/{id}/evidence` | Listar evidencias |
 | GET | `/api/evidence/{id}/download` | Descargar evidencia |
 | POST | `/api/laboratories/{id}/evaluations` | Guardar evaluación estructurada |
-| PATCH | `/api/evaluations/{id}/approval` | Registrar decisión docente |
+| POST | `/api/laboratories/{id}/evaluations/ai-auto` | Evaluar con LLM la última evidencia (opcional `student_id` solo docente, `model_name`) |
+| PATCH | `/api/evaluations/{id}/approval` | Registrar decisión docente (solo docente) |
+| GET | `/api/evaluations/{id}` | Detalle de una evaluación |
 | GET | `/api/evaluations` | Consultar; filtros `student`, `laboratory_id`, `approved` |
 | GET | `/api/analytics/summary` | Resumen de evaluaciones aprobadas por cohorte |
 | GET | `/api/mindmap` | Nodos y relaciones de laboratorios/temas |
@@ -21,7 +26,7 @@ Base local: `http://127.0.0.1:8000`. La documentación interactiva se publica en
 
 `result.crit` debe incluir un elemento por criterio de la rúbrica vigente, en el mismo orden y con el mismo nombre. Cada elemento incluye `criterio` y `score` (0 a 5); puede añadir `evidencia`, `fortaleza`, `brecha` y `nivel`. El backend ignora el valor preliminar del cliente y recalcula la nota con los pesos oficiales. Si la versión de rúbrica cambió, la API responde `409 Conflict`.
 
-La API no invoca todavía ningún LLM. El resultado del HTML es una simulación local y debe identificarse como tal.
+El endpoint `ai-auto` sí invoca un LLM si está disponible; si no, devuelve un resultado de respaldo marcado con `fallback: true`. El evaluador del HTML es una simulación local y debe identificarse como tal.
 
 ## Analítica e informes
 

@@ -2,12 +2,29 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(ROOT_DIR.parent / ".env")
+BACKEND_DIR = Path(__file__).resolve().parents[2]   # .../backend
+ROOT_DIR = BACKEND_DIR                               # se conserva el nombre usado antes
+load_dotenv(BACKEND_DIR.parent / ".env")
+
+
+def _resolve_path(value: str) -> Path:
+    """Las rutas relativas se interpretan desde backend/, no desde donde se lance el comando."""
+    path = Path(value)
+    return path if path.is_absolute() else (BACKEND_DIR / path).resolve()
+
+
+def _resolve_database_url(url: str) -> str:
+    prefix = "sqlite:///"
+    if url.startswith(prefix) and not url.startswith("sqlite:////") and url != "sqlite://":
+        raw = url[len(prefix):]
+        if raw and not Path(raw).is_absolute() and ":" not in raw[:3]:
+            return prefix + _resolve_path(raw).as_posix()
+    return url
+
 
 APP_NAME = os.getenv("APP_NAME", "Asesor Pedagógico Inteligente")
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./storage/asesor_pedagogico.db")
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(ROOT_DIR / "storage" / "evidencias")))
+DATABASE_URL = _resolve_database_url(os.getenv("DATABASE_URL", "sqlite:///./storage/asesor_pedagogico.db"))
+UPLOAD_DIR = _resolve_path(os.getenv("UPLOAD_DIR", "./storage/evidencias"))
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "25"))
 
 # --- Seguridad y autenticación ---

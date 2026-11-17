@@ -1,15 +1,4 @@
 """Pruebas de autenticación y roles. Requieren: python -m pip install pytest httpx"""
-import os
-import sys
-import tempfile
-from pathlib import Path
-
-_tmp = tempfile.mkdtemp()
-os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
-os.environ["UPLOAD_DIR"] = f"{_tmp}/evidencias"
-os.environ["APP_ENV"] = "development"
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-
 import pytest
 from fastapi.testclient import TestClient
 
