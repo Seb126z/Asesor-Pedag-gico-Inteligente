@@ -32,3 +32,6 @@ pre{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:10
 ul.ft{margin:8px 0 0;padding-left:20px}ul.ft li{margin-bottom:4px}
 svg text{fill:var(--tx);font-size:12px;pointer-events:none}svg g.nd{cursor:pointer}
 small,.mu{color:var(--mu)}h3{margin:0 0 8px;font-size:16px}
+.msg{max-width:980px;margin:12px auto 0;padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf)}
+.msg.ok{border-color:var(--ok);color:var(--ok)}.msg.er{border-color:var(--er);color:var(--er)}.msg[hidden]{display:none}
+.userbar{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin:0 0 6px}.userbar:empty{display:none}

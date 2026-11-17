@@ -1,3 +1,2 @@
 /* Arranque de la aplicación */
-apiStatus();
-nav();render();
+(async function(){await apiStatus();await restoreSession();draw()})();

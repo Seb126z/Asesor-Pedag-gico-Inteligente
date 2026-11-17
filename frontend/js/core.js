@@ -13,8 +13,9 @@ var LABS=[
 {id:6,c:2,name:'Lab 6 · LLM y RAG',topics:['llm','nlp'],v:'1.2',rub:R([['Recuperación',35,['embeddings','vectorial','chunks']],['Prompting',35,['prompt','contexto','json']],['Evaluación y alucinaciones',30,['alucinación','citas','verificación']]]),txt:''}];
 LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null});
 var tab='res',cur=0,sel=null;
-var TABS=[['res','Proyecto'],['rub','Rúbricas'],['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']];
+var TABS=[];
 function $(i){return document.getElementById(i)}
+function toast(t,k){var e=$('msg');e.textContent=t;e.className='msg '+(k||'');e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){e.hidden=true},7000)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function sumW(l){return l.rub.reduce(function(a,c){return a+(+c.w||0)},0)}
 function lvl(s){return s>=4.5?'Sobresaliente':s>=3.5?'Alto':s>=2.5?'Básico':s>0?'Bajo':'Sin evidencia'}
@@ -25,5 +26,5 @@ function final(l){return l.res?(l.adj!=null?l.adj:l.res.prelim):null}
 function nav(){$('nav').innerHTML=TABS.map(function(x){return'<button class="'+(x[0]==tab?'on':'')+'" onclick="go(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')}
 function go(t){tab=t;nav();render();window.scrollTo(0,0)}
 function labSel(){return'<select onchange="cur=+this.value;render()">'+LABS.map(function(l,i){return'<option value="'+i+'"'+(i==cur?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select>'}
-function render(){$('app').innerHTML={res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
+function render(){if(!USER){$('app').innerHTML=vAuth();return}$('app').innerHTML={res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
 
