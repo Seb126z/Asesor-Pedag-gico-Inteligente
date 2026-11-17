@@ -24,7 +24,7 @@ function col(g){return g==null?'var(--bd)':g>=4?'var(--ok)':g>=3?'var(--wa)':'va
 function calc(l,r){var t=0;r.crit.forEach(function(c,i){t+=c.score*l.rub[i].w/100});return Math.round(t*10)/10}
 function final(l){return l.res?(l.adj!=null?l.adj:l.res.prelim):null}
 function nav(){$('nav').innerHTML=TABS.map(function(x){return'<button class="'+(x[0]==tab?'on':'')+'" onclick="go(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')}
-function go(t){tab=t;nav();render();window.scrollTo(0,0)}
+function go(t){tab=t;if(t==='pan')loadPanel();nav();render();window.scrollTo(0,0)}
 function labSel(){return'<select onchange="cur=+this.value;render()">'+LABS.map(function(l,i){return'<option value="'+i+'"'+(i==cur?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select>'}
-function render(){if(!USER){$('app').innerHTML=vAuth();return}$('app').innerHTML={res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
+function render(){if(!USER){$('app').innerHTML=vAuth();return}$('app').innerHTML={pan:vPanel,res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
 

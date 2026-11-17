@@ -1,6 +1,6 @@
 /* Pestaña Evaluación (estudiante y revisión docente) */
 /* Evaluador simulado local: sustituir por llamada a un LLM con salida validada por JSON Schema */
-function evaluate(l){
+function evaluateLab(l){
  var t=l.txt.toLowerCase(),sents=l.txt.split(/[.\n]/);
  var crit=l.rub.map(function(c){
   var hit=c.kw.filter(function(k){return t.indexOf(k)>-1});
@@ -15,7 +15,7 @@ function evaluate(l){
 function vEval(){
  var l=LABS[cur],r=l.res,ok=sumW(l)==100;
  var h='<div class="card row">'+labSel()+'<span class="tag">Cohorte '+l.c+'</span><span class="tag">Rúbrica v'+l.v+'</span></div>'+
- '<div class="card"><h3>Solución del estudiante (texto del informe y código)</h3><label>Adjuntar evidencia (PDF, ZIP, código o imagen): <input type="file" accept=".pdf,.zip,.txt,.py,.js,.html,.docx,.pptx,.png,.jpg,.jpeg,.mp4" onchange="uploadEvidence(this)"></label><p class="mu"><small>Los archivos se guardan en el backend. Tamaño máximo: 25 MB.</small></p><textarea oninput="LABS[cur].txt=this.value">'+esc(l.txt)+'</textarea><div class="row" style="margin-top:8px"><button class="b" '+(ok&&!l.dirty?'':'disabled')+' onclick="LABS[cur].res=evaluate(LABS[cur]);LABS[cur].ok=false;LABS[cur].adj=null;persistEvaluation(LABS[cur]);render()">Evaluar con IA</button>'+(ok?'':'<span class="er">Rúbrica inconsistente</span>')+(ok&&l.dirty?'<span class="wa">Guarda la rúbrica antes de evaluar</span>':'')+'</div></div>';
+ '<div class="card"><h3>Solución del estudiante (texto del informe y código)</h3><label>Adjuntar evidencia (PDF, ZIP, código o imagen): <input type="file" accept=".pdf,.zip,.txt,.py,.js,.html,.docx,.pptx,.png,.jpg,.jpeg,.mp4" onchange="uploadEvidence(this)"></label><p class="mu"><small>Los archivos se guardan en el backend. Tamaño máximo: 25 MB.</small></p><textarea oninput="LABS[cur].txt=this.value">'+esc(l.txt)+'</textarea><div class="row" style="margin-top:8px"><button class="b" '+(ok&&!l.dirty?'':'disabled')+' onclick="LABS[cur].res=evaluateLab(LABS[cur]);LABS[cur].ok=false;LABS[cur].adj=null;persistEvaluation(LABS[cur]);render()">Evaluar con IA</button>'+(ok?'':'<span class="er">Rúbrica inconsistente</span>')+(ok&&l.dirty?'<span class="wa">Guarda la rúbrica antes de evaluar</span>':'')+'</div></div>';
  if(!r)return h;
  h+='<div class="card"><div class="row" style="justify-content:space-between"><div><div class="mu">Nota preliminar (calculada por el backend)</div><div class="big" style="color:'+col(r.prelim)+'">'+r.prelim.toFixed(1)+'</div></div><div><span class="tag">'+(l.ok?'Aprobada por docente':'Pendiente de revisión')+'</span></div></div>'+
  '<div class="tw"><table><tr><th>Criterio</th><th>Peso</th><th>Valor</th><th>Nivel</th><th>Evidencia y retroalimentación</th></tr>'+

@@ -4,11 +4,11 @@ function getToken(){if(TOKEN)return TOKEN;try{TOKEN=sessionStorage.getItem('tok'
 function setSession(t){TOKEN=t;try{sessionStorage.setItem('tok',t)}catch(e){}}
 function clearSession(){TOKEN=null;try{sessionStorage.removeItem('tok')}catch(e){}}
 function isDoc(){return !!USER&&USER.role==='docente'}
-function tabsFor(role){var t=[['res','Proyecto']];if(role==='docente')t.push(['rub','Rúbricas']);t.push(['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']);return t}
+function tabsFor(role){var t=[['res','Proyecto']];if(role==='docente')t.push(['pan','Panel docente'],['rub','Rúbricas']);t.push(['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']);return t}
 function renderUser(){$('userbar').innerHTML=USER?'<span>'+esc(USER.name)+' <span class="tag">'+esc(USER.role)+'</span></span><button class="b s" onclick="logout()">Cerrar sesión</button>':''}
 function draw(){renderUser();nav();render()}
 function resetLabs(){LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null;l.apiEvaluationId=null;l.pending=null;l.feedback=null;l.fb='';l.dirty=false})}
-function logout(expired){clearSession();USER=null;TABS=[];tab='res';resetLabs();if(expired===true)toast('Tu sesión venció. Inicia sesión de nuevo.','er');draw()}
+function logout(expired){clearSession();USER=null;TABS=[];tab='res';PEND=null;pSel=null;resetLabs();if(expired===true)toast('Tu sesión venció. Inicia sesión de nuevo.','er');draw()}
 async function afterLogin(){TABS=tabsFor(USER.role);tab='res';
  try{await loadLabs()}catch(e){resetLabs();toast('No se pudieron cargar los laboratorios del servidor; se usan datos de ejemplo. '+e.message,'er')}
  if(USER.role==='estudiante'){try{await loadMyEvaluations()}catch(e){toast('No se pudieron cargar tus evaluaciones: '+e.message,'er')}}
