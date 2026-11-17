@@ -6,9 +6,12 @@ from app.core.config import APP_NAME, UPLOAD_DIR
 from app.core.database import Base, engine, SessionLocal
 from app.models.entities import Laboratory
 from app.api.routes import router
+from app.api.auth import router as auth_router
+from app.services.users import seed_users
 
 app = FastAPI(title=APP_NAME, version="0.1.0", description="API inicial para gestión de evidencias, rúbricas y evaluaciones.")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(auth_router)
 app.include_router(router)
 
 SEED = [
@@ -29,6 +32,8 @@ def startup():
             for lab_id, cohort, name, topics, rubric in SEED:
                 db.add(Laboratory(id=lab_id, cohort=cohort, name=name, topics=topics, rubric_version="1.0", rubric=rubric, description="Descripción y objetivos por completar con la guía oficial del laboratorio."))
             db.commit()
+        seed_users(db)
 
 frontend = Path(__file__).resolve().parents[2] / "frontend"
 app.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
+
