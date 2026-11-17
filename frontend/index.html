@@ -48,7 +48,7 @@ var LABS=[
 {id:5,c:2,name:'Lab 5 · Visión artificial',topics:['vision'],v:'1.0',rub:R([['Datos de imágenes',30,['aumentación','etiquetas','resolución']],['Modelo CNN',40,['convolución','pooling','cnn']],['Métricas',30,['precisión','matriz de confusión']]]),txt:''},
 {id:6,c:2,name:'Lab 6 · LLM y RAG',topics:['llm','nlp'],v:'1.2',rub:R([['Recuperación',35,['embeddings','vectorial','chunks']],['Prompting',35,['prompt','contexto','json']],['Evaluación y alucinaciones',30,['alucinación','citas','verificación']]]),txt:''}];
 LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null});
-var TEAM=[['Integrante 1','Líder y arquitectura'],['Integrante 2','Backend e IA'],['Integrante 3','Frontend y UX'],['Integrante 4','Pruebas y despliegue']];
+var TEAM=[['Nicolás Barbosa','Arquitectura backend, base de datos y motor de evaluación determinista'],['Jerónimo','Gestión de rúbricas, ingesta de evidencias y sandbox de código'],['Sebastián Carrillo','Analítica de aprendizaje, informes integrados y mapa mental interactivo'],['Kevin','Panel docente, frontend UI y despliegue DevOps']];
 var tab='res',cur=0,sel=null;
 var TABS=[['res','Proyecto'],['rub','Rúbricas'],['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']];
 function $(i){return document.getElementById(i)}
@@ -77,7 +77,7 @@ function go(t){tab=t;nav();render();window.scrollTo(0,0)}
 function labSel(){return'<select onchange="cur=+this.value;render()">'+LABS.map(function(l,i){return'<option value="'+i+'"'+(i==cur?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select>'}
 function vRes(){
  return'<div class="card"><h3>Abstract</h3><p>Plataforma web que permite a los estudiantes autoevaluar sus laboratorios de las cohortes 1 y 2 de IA. Interpreta rúbricas ponderadas, analiza las evidencias con un modelo de IA que devuelve JSON estructurado y calcula la nota (0,0–5,0) en el backend, con revisión y aprobación docente. Consolida un informe integral y un mapa mental de competencias. Este prototipo funciona en el navegador con un evaluador local simulado; la arquitectura prevé modelos locales o en la nube, sandbox y trazabilidad.</p><p class="mu">Stack objetivo: FastAPI + Pydantic · PostgreSQL · Docker sandbox sin red · LLM configurable · React.</p></div>'+
- '<div class="card"><h3>Equipo desarrollador</h3><div class="grid">'+TEAM.map(function(m){return'<div><div class="av">'+m[0].split(' ').map(function(w){return w[0]}).join('').slice(0,2)+'</div><b>'+m[0]+'</b><br><small>'+m[1]+'</small></div>'}).join('')+'</div><p class="mu" style="margin-bottom:0"><small>Reemplaza nombres, roles y fotos con los de tu equipo.</small></p></div>'}
+ '<div class="card"><h3>Equipo desarrollador</h3><div class="grid">'+TEAM.map(function(m){return'<div style="border:1px solid var(--bd);border-radius:8px;padding:12px"><b>'+m[0]+'</b><p class="mu" style="margin:6px 0 0;font-size:13px">'+m[1]+'</p></div>'}).join('')+'</div><p class="mu" style="margin-bottom:0"><small>Equipo de desarrollo del proyecto.</small></p></div>'}
 function vRub(){
  var l=LABS[cur],s=sumW(l),ok=s==100;
  return'<div class="card row">'+labSel()+'<span class="tag">Rúbrica v'+l.v+'</span></div><div class="card"><div class="tw"><table><tr><th>Criterio</th><th>Peso %</th><th>Indicadores (separados por coma)</th><th></th></tr>'+
@@ -131,4 +131,4 @@ async function uploadEvidence(input){var l=LABS[cur],f=input.files&&input.files[
 function render(){$('app').innerHTML={res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
 apiStatus();
 nav();render();
-</script></body></html>
+</script><script src="/analytics.js"></script></body></html>
