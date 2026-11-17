@@ -28,7 +28,13 @@ td input{width:100%}td input.n{width:70px}
 .bar{height:10px;border-radius:5px;background:var(--bd);overflow:hidden}.bar i{display:block;height:100%}
 pre{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:10px;overflow-x:auto;font-size:12px;margin:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.av{width:64px;height:64px;border-radius:50%;background:var(--ac);color:var(--bg);display:grid;place-items:center;font-size:22px;font-weight:700;margin-bottom:8px}
+.av{position:relative;overflow:hidden;width:96px;height:96px;border-radius:50%;background:var(--ac);color:var(--bg);display:grid;place-items:center;font-size:28px;font-weight:700;margin-bottom:10px}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.mem{border-top:2px solid var(--ac);padding-top:14px}
+.mem b{font-size:16px}.mem .rol{color:var(--ac);font-weight:600;font-size:14px;margin:2px 0 6px}
+.stack{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+ul.ft{margin:8px 0 0;padding-left:20px}ul.ft li{margin-bottom:4px}
 svg text{fill:var(--tx);font-size:12px;pointer-events:none}svg g.nd{cursor:pointer}
 small,.mu{color:var(--mu)}h3{margin:0 0 8px;font-size:16px}
 </style></head><body>
@@ -48,7 +54,12 @@ var LABS=[
 {id:5,c:2,name:'Lab 5 · Visión artificial',topics:['vision'],v:'1.0',rub:R([['Datos de imágenes',30,['aumentación','etiquetas','resolución']],['Modelo CNN',40,['convolución','pooling','cnn']],['Métricas',30,['precisión','matriz de confusión']]]),txt:''},
 {id:6,c:2,name:'Lab 6 · LLM y RAG',topics:['llm','nlp'],v:'1.2',rub:R([['Recuperación',35,['embeddings','vectorial','chunks']],['Prompting',35,['prompt','contexto','json']],['Evaluación y alucinaciones',30,['alucinación','citas','verificación']]]),txt:''}];
 LABS.forEach(function(l){l.res=null;l.ok=false;l.adj=null});
-var TEAM=[['Integrante 1','Líder y arquitectura'],['Integrante 2','Backend e IA'],['Integrante 3','Frontend y UX'],['Integrante 4','Pruebas y despliegue']];
+var TEAM=[
+ {n:'Nicolás Barbosa',rol:'Backend, base de datos y motor de evaluación',d:'Diseña la API, la persistencia y el cálculo determinista de notas.',f:'nicolas'},
+ {n:'Jerónimo Sepúlveda',rol:'Rúbricas, evidencias y sandbox de código',d:'Gestiona la carga de trabajos, valida rúbricas y verifica el código entregado.',f:'jeronimo'},
+ {n:'Sebastián Carrillo',rol:'Informes y mapa mental interactivo',d:'Consolida los resultados de las cohortes y visualiza las competencias.',f:'sebastian'},
+ {n:'Kevin Espitia',rol:'Frontend, panel docente y despliegue',d:'Construye la interfaz, la revisión docente, el acceso por roles y la publicación.',f:'kevin'}];
+var STACK=['FastAPI','Pydantic','SQLAlchemy','SQLite (desarrollo)','PostgreSQL (producción)','HTML + JavaScript','LLM configurable','Git y GitHub'];
 var tab='res',cur=0,sel=null;
 var TABS=[['res','Proyecto'],['rub','Rúbricas'],['eval','Evaluación'],['inf','Informe'],['map','Mapa mental']];
 function $(i){return document.getElementById(i)}
@@ -75,9 +86,10 @@ function evaluate(l){
 function nav(){$('nav').innerHTML=TABS.map(function(x){return'<button class="'+(x[0]==tab?'on':'')+'" onclick="go(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')}
 function go(t){tab=t;nav();render();window.scrollTo(0,0)}
 function labSel(){return'<select onchange="cur=+this.value;render()">'+LABS.map(function(l,i){return'<option value="'+i+'"'+(i==cur?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select>'}
+function ini(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2)}
 function vRes(){
- return'<div class="card"><h3>Abstract</h3><p>Plataforma web que permite a los estudiantes autoevaluar sus laboratorios de las cohortes 1 y 2 de IA. Interpreta rúbricas ponderadas, analiza las evidencias con un modelo de IA que devuelve JSON estructurado y calcula la nota (0,0–5,0) en el backend, con revisión y aprobación docente. Consolida un informe integral y un mapa mental de competencias. Este prototipo funciona en el navegador con un evaluador local simulado; la arquitectura prevé modelos locales o en la nube, sandbox y trazabilidad.</p><p class="mu">Stack objetivo: FastAPI + Pydantic · PostgreSQL · Docker sandbox sin red · LLM configurable · React.</p></div>'+
- '<div class="card"><h3>Equipo desarrollador</h3><div class="grid">'+TEAM.map(function(m){return'<div><div class="av">'+m[0].split(' ').map(function(w){return w[0]}).join('').slice(0,2)+'</div><b>'+m[0]+'</b><br><small>'+m[1]+'</small></div>'}).join('')+'</div><p class="mu" style="margin-bottom:0"><small>Reemplaza nombres, roles y fotos con los de tu equipo.</small></p></div>'}
+ return'<div class="card"><h3>Abstract</h3><p>El Asesor Pedagógico Inteligente es una plataforma web para que los estudiantes de las cohortes 1 y 2 del curso de Inteligencia Artificial autoevalúen sus laboratorios y fortalezcan sus competencias. El docente carga la descripción, la rúbrica y la solución de cada laboratorio; el sistema analiza las evidencias con un modelo de IA que responde en formato estructurado y valida el código con verificaciones técnicas.</p><p>La nota entre 0,0 y 5,0 la calcula siempre el backend con las ponderaciones de la rúbrica, nunca el modelo de lenguaje, y cada valoración conserva su rúbrica, modelo y justificaciones para que el docente la revise, la ajuste y la apruebe antes de publicarla. Con los resultados aprobados, la plataforma genera un informe integral del aprendizaje y un mapa mental interactivo de las temáticas de IA con su nivel de dominio.</p><ul class="ft"><li><b>Aporte:</b> evaluaciones consistentes, explicables, trazables y supervisadas por el docente.</li><li><b>Desarrollo:</b> construido con asistentes de IA bajo supervisión del equipo, que verificó y corrigió su trabajo.</li></ul><div class="stack">'+STACK.map(function(t){return'<span class="tag">'+esc(t)+'</span>'}).join('')+'</div></div>'+
+ '<div class="card"><h3>Equipo desarrollador</h3><div class="team">'+TEAM.map(function(m){return'<div class="mem"><div class="av"><span>'+ini(m.n)+'</span><img src="img/equipo/'+m.f+'.png" alt="'+esc(m.n)+'" loading="lazy" onerror="this.remove()"></div><b>'+esc(m.n)+'</b><div class="rol">'+esc(m.rol)+'</div><small>'+esc(m.d)+'</small></div>'}).join('')+'</div></div>'}
 function vRub(){
  var l=LABS[cur],s=sumW(l),ok=s==100;
  return'<div class="card row">'+labSel()+'<span class="tag">Rúbrica v'+l.v+'</span></div><div class="card"><div class="tw"><table><tr><th>Criterio</th><th>Peso %</th><th>Indicadores (separados por coma)</th><th></th></tr>'+
