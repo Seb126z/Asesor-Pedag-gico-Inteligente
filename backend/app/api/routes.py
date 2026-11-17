@@ -1,11 +1,13 @@
+
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
-
+ 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-
+ 
 from app.api.deps import get_current_user, require_docente
 from app.core.config import UPLOAD_DIR, MAX_UPLOAD_MB
 from app.core.database import get_db
@@ -15,41 +17,59 @@ from app.services.ai_evaluator import evaluar_evidencia_con_ia, default_model
 from app.services.analytics import build_analytics_report, build_mindmap
 from app.services.evidence_text import extract_text
 from app.services.rubrics import validate_rubric, calculate_grade
-
+ 
 router = APIRouter(prefix="/api")
 ALLOWED_EXTENSIONS = {".pdf", ".zip", ".txt", ".py", ".js", ".html", ".docx",
                       ".pptx", ".png", ".jpg", ".jpeg", ".mp4"}
-
-
+ 
+ 
 def _level(score: float) -> str:
     return ("Sobresaliente" if score >= 4.5 else "Alto" if score >= 3.5
             else "Básico" if score >= 2.5 else "Bajo" if score > 0 else "Sin evidencia")
-
-
+ 
+ 
 def _student_scope(user: User) -> int | None:
     """Los estudiantes solo ven lo suyo (filtro por id de usuario); el docente ve todo."""
     return None if user.role == "docente" else user.id
-
-
+ 
+ 
+def _analyze_upload(path: Path, name: str) -> dict:
+    """Resumen rápido del archivo recién subido (no modifica nada y no extrae ZIP al disco)."""
+    suffix = Path(name).suffix.lower()
+    if suffix in {".pdf", ".txt", ".py", ".js", ".html"}:
+        preview, readable = extract_text(path, name)
+        return {"readable": readable, "total_characters": len(preview) if readable else 0,
+                "preview": preview[:600] if readable else None}
+    if suffix == ".zip":
+        try:
+            with zipfile.ZipFile(path) as zf:
+                names = [n for n in zf.namelist() if not n.endswith("/")]
+        except zipfile.BadZipFile:
+            return {"error": "El ZIP está dañado o no es válido"}
+        code = [n for n in names if n.lower().endswith((".py", ".js", ".java", ".cpp", ".txt", ".json", ".html", ".sql"))]
+        return {"total_files": len(names), "code_files_found": code[:50]}
+    return {}
+ 
+ 
 # ----------------------------------------------------------------- salud y laboratorios
 @router.get("/health")
 def health():
     return {"status": "ok", "service": "asesor-pedagogico-api"}
-
-
+ 
+ 
 @router.get("/laboratories")
 def list_laboratories(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     return db.query(Laboratory).order_by(Laboratory.cohort, Laboratory.id).all()
-
-
+ 
+ 
 @router.get("/laboratories/{laboratory_id}")
 def get_laboratory(laboratory_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     item = db.get(Laboratory, laboratory_id)
     if not item:
         raise HTTPException(404, "Laboratorio no encontrado")
     return item
-
-
+ 
+ 
 @router.put("/laboratories/{laboratory_id}/rubric")
 def update_rubric(laboratory_id: int, payload: RubricUpdate, db: Session = Depends(get_db),
                   _: User = Depends(require_docente)):
@@ -64,8 +84,8 @@ def update_rubric(laboratory_id: int, payload: RubricUpdate, db: Session = Depen
     item.rubric_version = payload.version
     db.commit()
     return {"laboratory_id": item.id, "version": item.rubric_version, **validation}
-
-
+ 
+ 
 # ----------------------------------------------------------------- evidencias
 @router.post("/laboratories/{laboratory_id}/evidence")
 async def upload_evidence(laboratory_id: int, file: UploadFile = File(...), db: Session = Depends(get_db),
@@ -91,6 +111,7 @@ async def upload_evidence(laboratory_id: int, file: UploadFile = File(...), db: 
         raise
     finally:
         await file.close()
+    file_analysis = _analyze_upload(destination, safe_name)
     record = Evidence(laboratory_id=laboratory_id, student=user.name, student_id=user.id,
                       original_name=safe_name, stored_name=stored,
                       content_type=file.content_type or "application/octet-stream")
@@ -98,9 +119,9 @@ async def upload_evidence(laboratory_id: int, file: UploadFile = File(...), db: 
     db.commit()
     db.refresh(record)
     return {"id": record.id, "laboratory_id": laboratory_id, "filename": record.original_name,
-            "size_bytes": size, "message": "Evidencia almacenada"}
-
-
+            "size_bytes": size, "message": "Evidencia almacenada", "file_analysis": file_analysis}
+ 
+ 
 @router.get("/laboratories/{laboratory_id}/evidence")
 def list_evidence(laboratory_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if not db.get(Laboratory, laboratory_id):
@@ -110,8 +131,8 @@ def list_evidence(laboratory_id: int, db: Session = Depends(get_db), user: User 
     if scope is not None:
         query = query.filter(Evidence.student_id == scope)
     return query.order_by(Evidence.uploaded_at.desc()).all()
-
-
+ 
+ 
 @router.get("/evidence/{evidence_id}/download")
 def download_evidence(evidence_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     record = db.get(Evidence, evidence_id)
@@ -122,8 +143,8 @@ def download_evidence(evidence_id: int, db: Session = Depends(get_db), user: Use
     if not path.is_relative_to(UPLOAD_DIR.resolve()) or not path.is_file():
         raise HTTPException(404, "Archivo no disponible")
     return FileResponse(path, filename=record.original_name, media_type="application/octet-stream")
-
-
+ 
+ 
 # ----------------------------------------------------------------- evaluaciones
 @router.post("/laboratories/{laboratory_id}/evaluations")
 def create_evaluation(laboratory_id: int, payload: EvaluationCreate, db: Session = Depends(get_db),
@@ -139,7 +160,7 @@ def create_evaluation(laboratory_id: int, payload: EvaluationCreate, db: Session
     criteria_results = payload.result.get("crit", [])
     if not isinstance(criteria_results, list) or len(criteria_results) != len(lab.rubric):
         raise HTTPException(422, "La cantidad de resultados no coincide con los criterios de la rúbrica oficial")
-
+ 
     normalized = []
     for rubric_item, result_item in zip(lab.rubric, criteria_results):
         if not isinstance(result_item, dict):
@@ -154,7 +175,7 @@ def create_evaluation(laboratory_id: int, payload: EvaluationCreate, db: Session
         if not 0 <= score <= 5:
             raise HTTPException(422, "Cada puntuación debe estar entre 0 y 5")
         normalized.append({"score": score, "weight": float(rubric_item["weight"])})
-
+ 
     # La nota la calcula siempre el backend con los pesos oficiales; se ignora la que envía el cliente.
     backend_grade = calculate_grade(normalized)
     result_data = dict(payload.result)
@@ -169,8 +190,8 @@ def create_evaluation(laboratory_id: int, payload: EvaluationCreate, db: Session
     db.commit()
     db.refresh(record)
     return {"id": record.id, "preliminary_grade": record.preliminary_grade, "approved": record.approved}
-
-
+ 
+ 
 @router.post("/laboratories/{laboratory_id}/evaluations/ai-auto")
 def create_ai_automated_evaluation(laboratory_id: int, student_id: int | None = None,
                                    model_name: str | None = None, db: Session = Depends(get_db),
@@ -182,19 +203,19 @@ def create_ai_automated_evaluation(laboratory_id: int, student_id: int | None = 
     check = validate_rubric(lab.rubric)
     if not check["valid"]:
         raise HTTPException(422, detail={"error": "La rúbrica del laboratorio tiene inconsistencias", "details": check})
-
+ 
     target = user
     if user.role == "docente" and student_id is not None:
         target = db.get(User, student_id)
         if not target:
             raise HTTPException(404, "Estudiante no encontrado")
-
+ 
     evidence = (db.query(Evidence)
                 .filter(Evidence.laboratory_id == laboratory_id, Evidence.student_id == target.id)
                 .order_by(Evidence.uploaded_at.desc(), Evidence.id.desc()).first())
     if not evidence:
         raise HTTPException(422, "No hay evidencias cargadas para este laboratorio. Sube un archivo primero.")
-
+ 
     text, extracted = extract_text(UPLOAD_DIR / evidence.stored_name, evidence.original_name)
     if not extracted:
         raise HTTPException(422, text.strip("[]") + " Formatos admitidos: PDF con texto, .txt, .py, .js, .html.")
@@ -202,7 +223,7 @@ def create_ai_automated_evaluation(laboratory_id: int, student_id: int | None = 
     ai = evaluar_evidencia_con_ia(text, lab.rubric, model_name)
     fallback = bool(ai.get("fallback"))
     by_name = {str(c.get("name", "")).strip().casefold(): c for c in ai.get("crit", [])}
-
+ 
     crit, normalized = [], []
     for rubric_item in lab.rubric:
         found = by_name.get(rubric_item["name"].strip().casefold())
@@ -212,7 +233,7 @@ def create_ai_automated_evaluation(laboratory_id: int, student_id: int | None = 
                      "nivel": _level(score), "evidencia": justification,
                      "fortaleza": None, "brecha": None if found else "Criterio sin evaluar"})
         normalized.append({"score": score, "weight": float(rubric_item["weight"])})
-
+ 
     backend_grade = calculate_grade(normalized)
     used_model = "respaldo-sin-llm" if fallback else model_name
     result = {"laboratorio": lab.name, "version_rubrica": lab.rubric_version, "modelo": used_model,
@@ -230,8 +251,8 @@ def create_ai_automated_evaluation(laboratory_id: int, student_id: int | None = 
     db.refresh(record)
     return {"status": "success", "evaluation_id": record.id, "student": target.name,
             "preliminary_grade": backend_grade, "fallback": fallback, "ai_analysis": result}
-
-
+ 
+ 
 @router.patch("/evaluations/{evaluation_id}/approval")
 def approve_evaluation(evaluation_id: int, payload: ApprovalUpdate, db: Session = Depends(get_db),
                        docente: User = Depends(require_docente)):
@@ -249,8 +270,8 @@ def approve_evaluation(evaluation_id: int, payload: ApprovalUpdate, db: Session 
     db.commit()
     return {"id": record.id, "approved": record.approved, "final_grade": record.final_grade,
             "teacher_feedback": record.teacher_feedback}
-
-
+ 
+ 
 @router.get("/evaluations")
 def list_evaluations(student: str | None = None, laboratory_id: int | None = None,
                      approved: bool | None = None, db: Session = Depends(get_db),
@@ -266,30 +287,30 @@ def list_evaluations(student: str | None = None, laboratory_id: int | None = Non
     if laboratory_id is not None:
         query = query.filter(Evaluation.laboratory_id == laboratory_id)
     return query.order_by(Evaluation.created_at.desc(), Evaluation.id.desc()).all()
-
-
+ 
+ 
 @router.get("/evaluations/{evaluation_id}")
 def get_evaluation(evaluation_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     record = db.get(Evaluation, evaluation_id)
     if not record or (user.role != "docente" and not (record.student_id == user.id and record.approved)):
         raise HTTPException(404, "Evaluación no encontrada")
     return record
-
-
+ 
+ 
 # ----------------------------------------------------------------- analítica
 @router.get("/analytics/summary")
 def analytics_summary(cohort: int | None = None, student: str | None = None, db: Session = Depends(get_db),
                       user: User = Depends(get_current_user)):
     return build_analytics_report(db, cohort=cohort, student=student, student_id=_student_scope(user))
-
-
+ 
+ 
 @router.get("/analytics/report")
 def analytics_report(cohort: int | None = None, student: str | None = None, db: Session = Depends(get_db),
                      user: User = Depends(get_current_user)):
     """Informe consolidado basado únicamente en evaluaciones aprobadas por docente."""
     return build_analytics_report(db, cohort=cohort, student=student, student_id=_student_scope(user))
-
-
+ 
+ 
 @router.get("/mindmap")
 def mindmap_data(cohort: int | None = None, student: str | None = None, db: Session = Depends(get_db),
                  user: User = Depends(get_current_user)):
