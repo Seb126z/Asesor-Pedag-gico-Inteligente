@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import quote, unquote
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]   # .../backend
@@ -14,6 +15,19 @@ def _resolve_path(value: str) -> Path:
 
 
 def _resolve_database_url(url: str) -> str:
+    url = url.strip().strip("\"'").strip()  # espacios o comillas pegados por error al copiar el valor
+    # Supabase/Render entregan "postgres://" o "postgresql://"; se fija el driver psycopg2 (el de requirements)
+    for prefix in ("postgres://", "postgresql://", "postgresql+psycopg2://"):
+        if url.startswith(prefix):
+            rest = url[len(prefix):]
+            creds, at, hostpart = rest.rpartition("@")  # la ÚLTIMA @ separa credenciales de servidor
+            if at:
+                user, colon, password = creds.partition(":")
+                if colon:  # codifica caracteres especiales de la contraseña (@ # / : ...) sin doble codificar
+                    password = quote(unquote(password), safe="")
+                creds = user + colon + password
+                rest = creds + "@" + hostpart
+            return "postgresql+psycopg2://" + rest
     prefix = "sqlite:///"
     if url.startswith(prefix) and not url.startswith("sqlite:////") and url != "sqlite://":
         raw = url[len(prefix):]

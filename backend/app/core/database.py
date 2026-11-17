@@ -1,9 +1,17 @@
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.core.config import DATABASE_URL
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+try:
+    engine = create_engine(DATABASE_URL, connect_args=connect_args)
+except ArgumentError as exc:
+    raise RuntimeError(
+        "DATABASE_URL tiene un formato inválido. Debe verse así: "
+        "postgresql://USUARIO:CONTRASEÑA@HOST:5432/postgres (sin espacios, sin comillas y sin corchetes). "
+        "Revisa el valor en Render > Environment."
+    ) from None
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
