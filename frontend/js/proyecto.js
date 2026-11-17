@@ -2,8 +2,8 @@
 var TEAM=[
  {n:'Nicolás Barbosa',rol:'Backend, base de datos y motor de evaluación',d:'Diseña la API, la persistencia y el cálculo determinista de notas.',f:'nicolas'},
  {n:'Jerónimo Sepúlveda',rol:'Rúbricas, evidencias y sandbox de código',d:'Gestiona la carga de trabajos, valida rúbricas y verifica el código entregado.',f:'jeronimo'},
- {n:'Sebastián Carrillo',rol:'Informes y mapa mental interactivo',d:'Consolida los resultados de las cohortes y visualiza las competencias.',f:'sebastian'},
- {n:'Kevin Espitia',rol:'Frontend, panel docente y despliegue',d:'Construye la interfaz, la revisión docente, el acceso por roles y la publicación.',f:'kevin'}];
+ {n:'Sebastián Carrillo',rol:'Informes, mapa mental y despliegue',d:'Consolida los resultados de las cohortes, visualiza las competencias y publica la plataforma.',f:'sebastian'},
+ {n:'Kevin Espitia',rol:'Frontend, panel docente y acceso por roles',d:'Construye la interfaz, la revisión docente y el inicio de sesión con roles.',f:'kevin'}];
 var STACK=['FastAPI','Pydantic','SQLAlchemy','SQLite (desarrollo)','PostgreSQL (producción)','HTML + JavaScript','LLM configurable','Git y GitHub'];
 var AI_LOG=[
  {herr:'Claude (Anthropic)',quien:'Kevin Espitia',
