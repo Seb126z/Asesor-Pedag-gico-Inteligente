@@ -1,6 +1,4 @@
-/* Núcleo: datos de ejemplo, estado, utilidades y navegación (compartido) */
-var TOPICS={busqueda:'Búsqueda',agentes:'Agentes',supervisado:'Aprendizaje supervisado',redes:'Redes neuronales',nlp:'Procesamiento de lenguaje',llm:'LLM y RAG',vision:'Visión artificial'};
-var CATS=[['Razonamiento',['busqueda','agentes']],['Aprendizaje',['supervisado','redes']],['Lenguaje',['nlp','llm']],['Percepción',['vision']]];
+/* Núcleo: datos de ejemplo (respaldo sin backend), estado, utilidades y navegación (compartido) */
 function R(a){return a.map(function(r){return{n:r[0],w:r[1],kw:r[2]}})}
 var LABS=[
 {id:1,c:1,name:'Lab 1 · Búsqueda y agentes',topics:['busqueda','agentes'],v:'1.0',rub:R([['Algoritmo de búsqueda',40,['bfs','a*','heurística','nodos']],['Diseño del agente',30,['agente','percepción','acción','entorno']],['Análisis de resultados',30,['complejidad','comparación','tiempo']]]),
@@ -24,7 +22,7 @@ function col(g){return g==null?'var(--bd)':g>=4?'var(--ok)':g>=3?'var(--wa)':'va
 function calc(l,r){var t=0;r.crit.forEach(function(c,i){t+=c.score*l.rub[i].w/100});return Math.round(t*10)/10}
 function final(l){return l.res?(l.adj!=null?l.adj:l.res.prelim):null}
 function nav(){$('nav').innerHTML=TABS.map(function(x){return'<button class="'+(x[0]==tab?'on':'')+'" onclick="go(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')}
-function go(t){tab=t;if(t==='pan')loadPanel();nav();render();window.scrollTo(0,0)}
+function go(t){tab=t;if(t==='pan')loadPanel();if(t==='inf'||t==='map')analyticsRefresh(t);nav();render();window.scrollTo(0,0)}
 function labSel(){return'<select onchange="cur=+this.value;render()">'+LABS.map(function(l,i){return'<option value="'+i+'"'+(i==cur?' selected':'')+'>'+esc(l.name)+'</option>'}).join('')+'</select>'}
 function render(){if(!USER){$('app').innerHTML=vAuth();return}$('app').innerHTML={pan:vPanel,res:vRes,rub:vRub,eval:vEval,inf:vInf,map:vMap}[tab]()}
 

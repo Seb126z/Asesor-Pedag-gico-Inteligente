@@ -124,3 +124,16 @@ def test_migracion_agrega_columnas_a_base_antigua(tmp_path, monkeypatch):
     assert {"student_id"} <= {c["name"] for c in insp.get_columns("evidences")}
     assert {"student_id", "teacher_feedback", "approved_by", "approved_at"} <= {c["name"] for c in insp.get_columns("evaluations")}
     assert insp.has_table("users")
+
+
+def test_alias_de_analitica_responde_igual(client):
+    doc = auth(client, "docente@demo.local", "docente123")
+    assert client.get("/api/analytics/summary", headers=doc).json() == client.get("/api/analytics/report", headers=doc).json()
+
+
+def test_frontend_se_sirve_con_todos_sus_modulos(client):
+    import re
+    html = client.get("/").text
+    scripts = re.findall(r'<script src="([^"]+)"', html)
+    assert scripts and all(client.get("/" + src).status_code == 200 for src in scripts)
+    assert client.get("/css/app.css").status_code == 200

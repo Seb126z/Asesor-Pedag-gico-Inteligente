@@ -1,18 +1,22 @@
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Boolean, DateTime, ForeignKey, Text, JSON
+
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.clock import utcnow
 from app.core.database import Base
 
 
 class User(Base):
     __tablename__ = "users"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(160))
     email: Mapped[str] = mapped_column(String(180), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20), default="estudiante")  # "estudiante" | "docente"
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class Laboratory(Base):
@@ -40,7 +44,7 @@ class Evidence(Base):
     original_name: Mapped[str] = mapped_column(String(255))
     stored_name: Mapped[str] = mapped_column(String(255), unique=True)
     content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     laboratory = relationship("Laboratory", back_populates="evidences")
 
@@ -61,6 +65,6 @@ class Evaluation(Base):
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     result: Mapped[dict] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     laboratory = relationship("Laboratory", back_populates="evaluations")

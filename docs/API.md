@@ -19,7 +19,7 @@ Base local: `http://127.0.0.1:8000`. La documentación interactiva se publica en
 | PATCH | `/api/evaluations/{id}/approval` | Registrar decisión docente (solo docente) |
 | GET | `/api/evaluations/{id}` | Detalle de una evaluación |
 | GET | `/api/evaluations` | Consultar; filtros `student`, `laboratory_id`, `approved` |
-| GET | `/api/analytics/summary` | Resumen de evaluaciones aprobadas por cohorte |
+| GET | `/api/analytics/report` · `/api/analytics/summary` | Informe de evaluaciones aprobadas (ambas rutas responden igual) |
 | GET | `/api/mindmap` | Nodos y relaciones de laboratorios/temas |
 
 ## Evaluación

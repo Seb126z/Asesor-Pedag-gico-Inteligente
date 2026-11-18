@@ -40,6 +40,8 @@ APP_NAME = os.getenv("APP_NAME", "Asesor Pedagógico Inteligente")
 DATABASE_URL = _resolve_database_url(os.getenv("DATABASE_URL", "sqlite:///./storage/asesor_pedagogico.db"))
 UPLOAD_DIR = _resolve_path(os.getenv("UPLOAD_DIR", "./storage/evidencias"))
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "25"))
+ALLOWED_EXTENSIONS = frozenset({".pdf", ".zip", ".txt", ".py", ".js", ".html", ".docx",
+                                ".pptx", ".png", ".jpg", ".jpeg", ".mp4"})
 
 # --- Seguridad y autenticación ---
 APP_ENV = os.getenv("APP_ENV", "development")  # "production" en el servidor

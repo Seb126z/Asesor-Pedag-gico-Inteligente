@@ -1,4 +1,6 @@
-"""Dependencias de FastAPI: usuario actual y control de roles."""
+"""Dependencias de FastAPI: usuario actual, control de roles y utilidades comunes de las rutas."""
+from typing import TypeVar
+
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -9,6 +11,7 @@ from app.core.security import decode_token
 from app.models.entities import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+T = TypeVar("T")
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -32,3 +35,19 @@ def require_role(*roles: str):
 
 
 require_docente = require_role("docente")
+
+
+def is_docente(user: User) -> bool:
+    return user.role == "docente"
+
+
+def student_scope(user: User) -> int | None:
+    """Los estudiantes solo ven lo suyo (filtro por id de usuario); el docente ve todo (None)."""
+    return None if is_docente(user) else user.id
+
+
+def get_or_404(db: Session, model: type[T], item_id: int, message: str) -> T:
+    item = db.get(model, item_id)
+    if item is None:
+        raise HTTPException(404, message)
+    return item

@@ -60,19 +60,23 @@ Con Ollama: `ollama pull llama3.2` y déjalo corriendo. Si el modelo no responde
 asesor-pedagogico/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # Endpoints REST
-│   │   ├── core/         # Configuración y conexión a BD
+│   │   ├── api/          # Endpoints REST, un módulo por recurso:
+│   │   │                 #   auth, laboratories, evidence, evaluations, analytics
+│   │   │                 #   (routes.py los agrupa bajo /api; deps.py: sesión y roles)
+│   │   ├── core/         # Configuración, BD, seguridad (JWT/PBKDF2) y reloj UTC
 │   │   ├── models/       # Entidades SQLAlchemy
 │   │   ├── schemas/      # Contratos Pydantic
-│   │   ├── services/     # Validación de rúbricas y cálculo
-│   │   └── main.py       # Aplicación FastAPI y datos iniciales
+│   │   ├── services/     # Lógica de negocio sin HTTP: rúbricas, notas (grading),
+│   │   │                 #   evaluador IA, texto de evidencias, analítica, semillas
+│   │   └── main.py       # Aplicación FastAPI y arranque
 │   ├── storage/evidencias/ # Archivos cargados (no versionar)
 │   └── run.py
-├── frontend/             # index.html + js/ (módulos) + css/ + analytics.js
+├── frontend/             # index.html + css/ + js/ (un módulo por pestaña)
 ├── docs/                 # Documentación del proyecto
 ├── tests/
 ├── .env.example
-└── requirements.txt
+├── requirements.txt
+└── requirements-dev.txt  # pytest, httpx y reportlab para las pruebas
 ```
 
 ## API inicial

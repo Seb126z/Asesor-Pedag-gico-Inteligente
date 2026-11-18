@@ -4,7 +4,7 @@ function labName(id){var l=LABS.filter(function(x){return x.id===id})[0];return 
 async function loadPanel(){PEND=null;render();try{PEND=await api('/api/evaluations'+(pAll?'':'?approved=false'));if(pSel&&!PEND.some(function(e){return e.id===pSel.id}))pSel=null}catch(e){PEND=[];toast('No se pudieron cargar las evaluaciones: '+e.message,'er')}render()}
 function setPanelFilter(all){pAll=all;pSel=null;loadPanel()}
 async function selectEval(id){var ev=PEND.filter(function(e){return e.id===id})[0];if(!ev)return;pSel=ev;pGrade=ev.final_grade;pFb=ev.teacher_feedback||'';pEvid=[];render();
- try{var all=await api('/api/laboratories/'+ev.laboratory_id+'/evidence');if(pSel&&pSel.id===id)pEvid=all.filter(function(x){return x.student===ev.student})}catch(e){toast('No se pudieron cargar las evidencias: '+e.message,'er')}render()}
+ try{var all=await api('/api/laboratories/'+ev.laboratory_id+'/evidence');if(pSel&&pSel.id===id)pEvid=all.filter(function(x){return ev.student_id!=null?x.student_id===ev.student_id:x.student===ev.student})}catch(e){toast('No se pudieron cargar las evidencias: '+e.message,'er')}render()}
 async function savePanel(){if(!pSel)return;var g=pGrade!=null?pGrade:pSel.preliminary_grade;
  try{await api('/api/evaluations/'+pSel.id+'/approval',jsonOpts('PATCH',{approved:true,final_grade:g,teacher_feedback:pFb||null}));toast('Evaluación aprobada y publicada para '+pSel.student,'ok');pSel=null;await loadPanel()}catch(e){toast('No se registró la aprobación: '+e.message,'er')}}
 function vPanel(){
